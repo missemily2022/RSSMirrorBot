@@ -1,4 +1,4 @@
-FROM ghcr.io/missemily2022/mirbot:ultra
+FROM ghcr.io/missemily2022/rssbot:mirror
 
 WORKDIR /usr/src/app
 RUN chmod 777 /usr/src/app
