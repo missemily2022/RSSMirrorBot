@@ -22,12 +22,11 @@ def get_text(message: Message) -> [None, str]:
     text_to_return = message.text
     if message.text is None:
         return None
-    if " " in text_to_return:
-        try:
-            return message.text.split(None, 1)[1]
-        except IndexError:
-            return None
-    else:
+    if " " not in text_to_return:
+        return None
+    try:
+        return message.text.split(None, 1)[1]
+    except IndexError:
         return None
 
 
@@ -44,7 +43,7 @@ async def _(client, message):
     if not query:
         await msg.edit("Please send command `/imdb` with name movie or tv/shows \n Ex: `/imdb Top Gun 2`")
         return
-    url = "https://www.imdb.com/find?ref_=nv_sr_fn&q=" + query + "&s=all"
+    url = f"https://www.imdb.com/find?ref_=nv_sr_fn&q={query}&s=all"
     r = await get_content(url)
     soup = BeautifulSoup(r, "lxml")
     o_ = soup.find("td", {"class": "result_text"})
@@ -90,8 +89,7 @@ async def _(client, message):
         res_str += f"<b>\n⭐️ Rating:</b> <code>{r_json['aggregateRating']['ratingCount']}</code> \n"
         res_str += f"<b>\n🏆 Rating Value:</b> <code>{r_json['aggregateRating']['ratingValue']}</code> \n"
     res_str += f"\n<b>URL :</b> {url}"
-    thumb = r_json.get('image')
-    if thumb:
+    if thumb := r_json.get('image'):
         await msg.delete()
         return await  message.reply_photo(thumb, caption=res_str)
     await msg.edit(res_str)

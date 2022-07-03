@@ -80,16 +80,16 @@ class MirrorListener(listeners.MirrorListeners):
                 with download_dict_lock:
                     download_dict[self.uid] = ZipStatus(name, m_path, size)
                 pswd = self.pswd
-                path = m_path + ".zip"
+                path = f"{m_path}.zip"
                 LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}')
                 if pswd is not None:
                     if self.isLeech and int(size) > TG_SPLIT_SIZE:
-                        path = m_path + "_zip"
+                        path = f"{m_path}_zip"
                         subprocess.run(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", f"-p{pswd}", path, m_path])
                     else:
                         subprocess.run(["7z", "a", "-mx=0", f"-p{pswd}", path, m_path])
                 elif self.isLeech and int(size) > TG_SPLIT_SIZE:
-                    path = m_path + "_zip"
+                    path = f"{m_path}_zip"
                     subprocess.run(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", path, m_path])
                 else:
                     subprocess.run(["7z", "a", "-mx=0", path, m_path])
@@ -237,9 +237,7 @@ class MirrorListener(listeners.MirrorListeners):
                 if fmsg != '':
                     time.sleep(1.5)
                     sendMessage(msg + fmsg, self.bot, self.update)
-            if self.isQbit and QB_SEED:
-                return
-            else:
+            if not self.isQbit or not QB_SEED:
                 with download_dict_lock:
                     try:
                         fs_utils.clean_download(download_dict[self.uid].path())
@@ -251,8 +249,7 @@ class MirrorListener(listeners.MirrorListeners):
                     self.clean()
                 else:
                     update_all_messages()
-                return
-
+            return
         with download_dict_lock:
             msg = f'<code>{download_dict[self.uid].name()}</code>\n<b>Size: </b><code>{size}</code>'
             msg += '\n<b>Type: </b><code>Folder</code>'
@@ -296,18 +293,17 @@ class MirrorListener(listeners.MirrorListeners):
         sendMarkup(msg + msg_g, self.bot, self.update, InlineKeyboardMarkup(buttons.build_menu(2)))
         if self.isQbit and QB_SEED:
             return
+        with download_dict_lock:
+            try:
+                fs_utils.clean_download(download_dict[self.uid].path())
+            except FileNotFoundError:
+                pass
+            del download_dict[self.uid]
+            count = len(download_dict)
+        if count == 0:
+            self.clean()
         else:
-            with download_dict_lock:
-                try:
-                    fs_utils.clean_download(download_dict[self.uid].path())
-                except FileNotFoundError:
-                    pass
-                del download_dict[self.uid]
-                count = len(download_dict)
-            if count == 0:
-                self.clean()
-            else:
-                update_all_messages()
+            update_all_messages()
 
     def onUploadError(self, error):
         e_str = error.replace('<', '').replace('>', '')
@@ -361,12 +357,8 @@ def _mirror(bot, update, isZip=False, extract=False, isQbit=False, isLeech=False
 
     reply_to = update.message.reply_to_message
     if reply_to is not None:
-        file = None
         media_array = [reply_to.document, reply_to.video, reply_to.audio]
-        for i in media_array:
-            if i is not None:
-                file = i
-                break
+        file = next((i for i in media_array if i is not None), None)
         if (
             not bot_utils.is_url(link)
             and not bot_utils.is_magnet(link)
@@ -400,8 +392,11 @@ def _mirror(bot, update, isZip=False, extract=False, isQbit=False, isLeech=False
     gdtot_link = bot_utils.is_gdtot_link(link)
 
     if not bot_utils.is_url(link) and not bot_utils.is_magnet(link) and not os.path.exists(link):
-        help_msg = "<b>Send link along with command line:</b>"
-        help_msg += "\n<code>/command</code> {link} |newname pswd: mypassword [𝚣𝚒𝚙/𝚞𝚗𝚣𝚒𝚙]"
+        help_msg = (
+            "<b>Send link along with command line:</b>"
+            + "\n<code>/command</code> {link} |newname pswd: mypassword [𝚣𝚒𝚙/𝚞𝚗𝚣𝚒𝚙]"
+        )
+
         help_msg += "\n\n<b>By replying to link or file:</b>"
         help_msg += "\n<code>/command</code> |newname pswd: mypassword [𝚣𝚒𝚙/𝚞𝚗𝚣𝚒𝚙]"
         help_msg += "\n\n<b>Direct link authorization:</b>"

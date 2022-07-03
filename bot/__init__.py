@@ -128,7 +128,6 @@ def aria2c_init():
                 aria2.remove([download], force=True, files=True)
     except Exception as e:
         logging.error(f"Aria2c initializing error: {e}")
-        pass
 
 threading.Thread(target=aria2c_init).start()
 time.sleep(1)
@@ -178,7 +177,7 @@ try:
     parent_id = getConfig('GDRIVE_FOLDER_ID')
     DOWNLOAD_DIR = getConfig('DOWNLOAD_DIR')
     if not DOWNLOAD_DIR.endswith("/"):
-        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
+        DOWNLOAD_DIR = f'{DOWNLOAD_DIR}/'
     DOWNLOAD_STATUS_UPDATE_INTERVAL = int(getConfig('DOWNLOAD_STATUS_UPDATE_INTERVAL'))
     OWNER_ID = int(getConfig('OWNER_ID'))
     AUTO_DELETE_MESSAGE_DURATION = int(getConfig('AUTO_DELETE_MESSAGE_DURATION'))
@@ -436,20 +435,19 @@ try:
     ACCOUNTS_ZIP_URL = getConfig('ACCOUNTS_ZIP_URL')
     if len(ACCOUNTS_ZIP_URL) == 0:
         raise KeyError
-    else:
-        try:
-            res = requests.get(ACCOUNTS_ZIP_URL)
-            if res.status_code == 200:
-                with open('accounts.zip', 'wb+') as f:
-                    f.write(res.content)
-                    f.close()
-            else:
-                logging.error(f"Failed to download accounts.zip, link got HTTP response: {res.status_code}")
-        except Exception as e:
-            logging.error(str(e))
-            raise KeyError
-        subprocess.run(["unzip", "-q", "-o", "accounts.zip"])
-        os.remove("accounts.zip")
+    try:
+        res = requests.get(ACCOUNTS_ZIP_URL)
+        if res.status_code == 200:
+            with open('accounts.zip', 'wb+') as f:
+                f.write(res.content)
+                f.close()
+        else:
+            logging.error(f"Failed to download accounts.zip, link got HTTP response: {res.status_code}")
+    except Exception as e:
+        logging.error(str(e))
+        raise KeyError
+    subprocess.run(["unzip", "-q", "-o", "accounts.zip"])
+    os.remove("accounts.zip")
 except KeyError:
     pass
 try:
@@ -507,8 +505,7 @@ try:
         raise KeyError
     SEARCH_PLUGINS = json.loads(SEARCH_PLUGINS)
     qbclient = get_client()
-    qb_plugins = qbclient.search_plugins()
-    if qb_plugins:
+    if qb_plugins := qbclient.search_plugins():
         for plugin in qb_plugins:
             p = plugin['name']
             qbclient.search_uninstall_plugin(names=p)
@@ -522,14 +519,14 @@ try:
         TIMEZONE = None
 except KeyError:
     TIMEZONE = 'Asia/Kolkata'
-    
+
 try:
     RESTARTED_GROUP_ID = getConfig('RESTARTED_GROUP_ID')
     if len(RESTARTED_GROUP_ID) == 0:
         RESTARTED_GROUP_ID = None
 except KeyError:
     RESTARTED_GROUP_ID = '-1001474827668'
-    
+
 updater = tg.Updater(token=BOT_TOKEN, request_kwargs={'read_timeout': 30, 'connect_timeout': 15})
 bot = updater.bot
 dispatcher = updater.dispatcher

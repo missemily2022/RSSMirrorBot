@@ -48,16 +48,12 @@ def cancel_mirror(update, context):
 def cancel_all(update, context):
     count = 0
     gid = 0
-    while True:
-        dl = getAllDownload()
-        if dl:
-            if dl.gid() != gid:
-                gid = dl.gid()
-                dl.download().cancel_download()
-                count += 1
-                sleep(0.3)
-        else:
-            break
+    while dl := getAllDownload():
+        if dl.gid() != gid:
+            gid = dl.gid()
+            dl.download().cancel_download()
+            count += 1
+            sleep(0.3)
     sendMessage(f'{count} Download(s) has been Cancelled!', context.bot, update)
 
 

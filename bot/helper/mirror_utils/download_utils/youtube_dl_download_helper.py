@@ -24,7 +24,7 @@ class MyLogger:
         if not match and not self.obj.is_playlist:
             match = re.search(r'.ExtractAudio..Destination..(.*?)$', msg) # To mp3
         if match and not self.obj.is_playlist:
-            newname = match.group(1)
+            newname = match[1]
             newname = newname.split("/")[-1]
             self.obj.name = newname
 
@@ -168,10 +168,12 @@ class YoutubeDLHelper(DownloadHelper):
         self.extractMetaData(link, name)
         if self.is_cancelled:
             return
-        if not self.is_playlist:
-            self.opts['outtmpl'] = f"{path}/{self.name}"
-        else:
-            self.opts['outtmpl'] = f"{path}/{self.name}/%(title)s.%(ext)s"
+        self.opts['outtmpl'] = (
+            f"{path}/{self.name}/%(title)s.%(ext)s"
+            if self.is_playlist
+            else f"{path}/{self.name}"
+        )
+
         self.__download(link)
 
     def cancel_download(self):

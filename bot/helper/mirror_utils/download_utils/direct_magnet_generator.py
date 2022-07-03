@@ -34,15 +34,13 @@ def get_torrent_magnet(url, is2nd=False) -> str:
         source = scraper.get(url)
         soup = BeautifulSoup(source.content, 'lxml')
         magnet_soup = soup.find('a', attrs={'href': re.compile("^magnet")})
-        magnet = magnet_soup.get('href')
-        return magnet
+        return magnet_soup.get('href')
     except AttributeError:
         raise DirectTorrentMagnetException('No magnet to export')
     except ValueError as e:
-        if str(e).startswith('Unable to identify Cloudflare'):
-            if is2nd:
-                raise DirectTorrentMagnetException('ERROR: Detected a Cloudflare version 2 challenge, Unable to bypass this challenge.')
-            else:
-                return get_torrent_magnet(url, is2nd=True)
-        else:
+        if not str(e).startswith('Unable to identify Cloudflare'):
             raise DirectTorrentMagnetException(f"Magnet Extracting Error:- {e}")
+        if is2nd:
+            raise DirectTorrentMagnetException('ERROR: Detected a Cloudflare version 2 challenge, Unable to bypass this challenge.')
+        else:
+            return get_torrent_magnet(url, is2nd=True)

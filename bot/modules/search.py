@@ -54,10 +54,10 @@ def torser(update, context):
         buttons.sbutton("Cancel", f"torser {user_id} cancel")
         button = InlineKeyboardMarkup(buttons.build_menu(2))
         sendMarkup('Choose tool to search:', context.bot, update, button)
-    elif SEARCH_API_LINK is not None and SEARCH_PLUGINS is None:
+    elif SEARCH_API_LINK is not None:
         button = _api_buttons(user_id)
         sendMarkup('Choose site to search:', context.bot, update, button)
-    elif SEARCH_API_LINK is None and SEARCH_PLUGINS is not None:
+    elif SEARCH_PLUGINS is not None:
         button = _plugin_buttons(user_id)
         sendMarkup('Choose site to search:', context.bot, update, button)
     else:
@@ -102,11 +102,10 @@ def _search(key, site, message, tool):
             search_results = resp.json()
             if site == "all":
                 search_results = list(itertools.chain.from_iterable(search_results))
-            if isinstance(search_results, list):
-                msg = f"<b>Found {min(len(search_results), SEARCH_LIMIT)}</b>"
-                msg += f" <b>result for <i>{key}</i>\nTorrent Site:- <i>{SITES.get(site)}</i></b>"
-            else:
+            if not isinstance(search_results, list):
                 return editMessage(f"No result found for <i>{key}</i>\nTorrent Site:- <i>{SITES.get(site)}</i>", message)
+            msg = f"<b>Found {min(len(search_results), SEARCH_LIMIT)}</b>"
+            msg += f" <b>result for <i>{key}</i>\nTorrent Site:- <i>{SITES.get(site)}</i></b>"
         except Exception as e:
             editMessage(str(e), message)
     else:
@@ -121,11 +120,10 @@ def _search(key, site, message, tool):
         dict_search_results = client.search_results(search_id=search_id)
         search_results = dict_search_results.results
         total_results = dict_search_results.total
-        if total_results != 0:
-            msg = f"<b>Found {min(total_results, SEARCH_LIMIT)}</b>"
-            msg += f" <b>result for <i>{key}</i>\nTorrent Site:- <i>{site.capitalize()}</i></b>"
-        else:
+        if total_results == 0:
             return editMessage(f"No result found for <i>{key}</i>\nTorrent Site:- <i>{site.capitalize()}</i>", message)
+        msg = f"<b>Found {min(total_results, SEARCH_LIMIT)}</b>"
+        msg += f" <b>result for <i>{key}</i>\nTorrent Site:- <i>{site.capitalize()}</i></b>"
     link = _getResult(search_results, key, message, tool)
     buttons = button_build.ButtonMaker()
     buttons.buildbutton("🔎 VIEW", link)
@@ -216,8 +214,7 @@ def _api_buttons(user_id):
     for data, name in SITES.items():
         buttons.sbutton(name, f"torser {user_id} {data} api")
     buttons.sbutton("Cancel", f"torser {user_id} cancel")
-    button = InlineKeyboardMarkup(buttons.build_menu(2))
-    return button
+    return InlineKeyboardMarkup(buttons.build_menu(2))
 
 def _plugin_buttons(user_id):
     buttons = button_build.ButtonMaker()
@@ -230,8 +227,7 @@ def _plugin_buttons(user_id):
         buttons.sbutton(siteName.capitalize(), f"torser {user_id} {siteName} plugin")
     buttons.sbutton('All', f"torser {user_id} all plugin")
     buttons.sbutton("Cancel", f"torser {user_id} cancel")
-    button = InlineKeyboardMarkup(buttons.build_menu(2))
-    return button
+    return InlineKeyboardMarkup(buttons.build_menu(2))
 
 
 torser_handler = CommandHandler(BotCommands.SearchCommand, torser, filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)

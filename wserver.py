@@ -748,16 +748,10 @@ async def set_priority(request):
         client.torrents_file_priority(torrent_hash=torr, file_ids=pause, priority=0)
     except qba.NotFound404Error:
         raise web.HTTPNotFound()
-    except:
-        LOGGER.error("Errored in paused")
-
     try:
         client.torrents_file_priority(torrent_hash=torr, file_ids=resume, priority=1)
     except qba.NotFound404Error:
         raise web.HTTPNotFound()
-    except:
-        LOGGER.error("Errored in resumed")
-
     await asyncio.sleep(2)
     if not await re_verfiy(pause, resume, client, torr):
         LOGGER.error("Verification Failed")

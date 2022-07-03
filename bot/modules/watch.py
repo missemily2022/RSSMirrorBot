@@ -48,8 +48,11 @@ def _watch(bot, update, isZip=False, isLeech=False, pswd=None):
         link = reply_to.text.strip()
 
     if not is_url(link):
-        help_msg = "<b>Send link along with command line:</b>"
-        help_msg += "\n<code>/command</code> {link} |newname pswd: mypassword [𝚣𝚒𝚙]"
+        help_msg = (
+            "<b>Send link along with command line:</b>"
+            + "\n<code>/command</code> {link} |newname pswd: mypassword [𝚣𝚒𝚙]"
+        )
+
         help_msg += "\n\n<b>By replying to link:</b>"
         help_msg += "\n<code>/command</code> |newname pswd: mypassword [𝚣𝚒𝚙]"
         return sendMessage(help_msg, bot, update)
@@ -98,20 +101,21 @@ def _watch(bot, update, isZip=False, isLeech=False, pswd=None):
                 if quality in formats_dict:
                     formats_dict[quality][frmt['tbr']] = size
                 else:
-                    subformat = {}
-                    subformat[frmt['tbr']] = size
+                    subformat = {frmt['tbr']: size}
                     formats_dict[quality] = subformat
 
-            for forDict in formats_dict:
-                if len(formats_dict[forDict]) == 1:
+            for forDict, value in formats_dict.items():
+                if len(value) == 1:
                     qual_fps_ext = re.split(r'p|-', forDict, maxsplit=2)
                     height = qual_fps_ext[0]
                     fps = qual_fps_ext[1]
                     ext = qual_fps_ext[2]
-                    if fps != '':
-                        video_format = f"bv*[height={height}][fps={fps}][ext={ext}]+ba/b"
-                    else:
-                        video_format = f"bv*[height={height}][ext={ext}]+ba/b"
+                    video_format = (
+                        f"bv*[height={height}][fps={fps}][ext={ext}]+ba/b"
+                        if fps != ''
+                        else f"bv*[height={height}][ext={ext}]+ba/b"
+                    )
+
                     size = list(formats_dict[forDict].values())[0]
                     buttonName = f"{forDict} ({get_readable_file_size(size)})"
                     buttons.sbutton(str(buttonName), f"qu {msg_id} {video_format}")
@@ -133,9 +137,7 @@ def qual_subbuttons(task_id, qual, msg):
     height = qual_fps_ext[0]
     fps = qual_fps_ext[1]
     ext = qual_fps_ext[2]
-    tbrs = []
-    for tbr in formats_dict[qual]:
-        tbrs.append(tbr)
+    tbrs = list(formats_dict[qual])
     tbrs.sort(reverse=True)
     for index, br in enumerate(tbrs):
         if index == 0:
@@ -191,10 +193,7 @@ def select_format(update, context):
         return editMessage('Choose Video Quality:', msg, task_info[4])
     elif data[2] == "audio":
         query.answer()
-        if len(data) == 4:
-            playlist = True
-        else:
-            playlist = False
+        playlist = len(data) == 4
         return audio_subbuttons(task_id, msg, playlist)
     elif data[2] != "cancel":
         query.answer()
@@ -202,10 +201,7 @@ def select_format(update, context):
         link = task_info[2]
         name = task_info[3]
         qual = data[2]
-        if len(data) == 4:
-            playlist = True
-        else:
-            playlist = False
+        playlist = len(data) == 4
         ydl = YoutubeDLHelper(listener)
         threading.Thread(target=ydl.add_download,args=(link, f'{DOWNLOAD_DIR}{task_id}', name, qual, playlist)).start()
     del listener_dict[task_id]

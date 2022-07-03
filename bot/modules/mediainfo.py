@@ -37,9 +37,7 @@ async def mediainfo(client, message):
     media_type = str(type(x_media)).split("'")[1]
     file_path = safe_filename(await reply.download())
     output_ = await runcmd(f'mediainfo "{file_path}"')
-    out = None
-    if len(output_) != 0:
-         out = output_[0]
+    out = output_[0] if len(output_) != 0 else None
     body_text = f"""
 <h2>JSON</h2>
 <pre>{x_media}</pre>

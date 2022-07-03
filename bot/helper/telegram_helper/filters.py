@@ -6,26 +6,26 @@ from bot import AUTHORIZED_CHATS, SUDO_USERS, OWNER_ID, download_dict, download_
 class CustomFilters:
     class _OwnerFilter(MessageFilter):
         def filter(self, message):
-            return bool(message.from_user.id == OWNER_ID)
+            return message.from_user.id == OWNER_ID
 
     owner_filter = _OwnerFilter()
 
     class _AuthorizedUserFilter(MessageFilter):
         def filter(self, message):
             id = message.from_user.id
-            return bool(id in AUTHORIZED_CHATS or id in SUDO_USERS or id == OWNER_ID)
+            return id in AUTHORIZED_CHATS or id in SUDO_USERS or id == OWNER_ID
 
     authorized_user = _AuthorizedUserFilter()
 
     class _AuthorizedChat(MessageFilter):
         def filter(self, message):
-            return bool(message.chat.id in AUTHORIZED_CHATS)
+            return message.chat.id in AUTHORIZED_CHATS
 
     authorized_chat = _AuthorizedChat()
 
     class _SudoUser(MessageFilter):
         def filter(self, message):
-            return bool(message.from_user.id in SUDO_USERS)
+            return message.from_user.id in SUDO_USERS
 
     sudo_user = _SudoUser()
 
@@ -38,14 +38,15 @@ class CustomFilters:
             if len(args) > 1:
                 # Cancelling by gid
                 with download_dict_lock:
-                    for message_id, status in download_dict.items():
-                        if status.gid() == args[1] and status.message.from_user.id == user_id:
-                            return True
-                    else:
-                        return False
+                    return any(
+                        status.gid() == args[1]
+                        and status.message.from_user.id == user_id
+                        for message_id, status in download_dict.items()
+                    )
+
             elif not message.reply_to_message:
                 return True
             # Cancelling by replying to original mirror message
             reply_user = message.reply_to_message.from_user.id
-            return bool(reply_user == user_id)
+            return reply_user == user_id
     mirror_owner_filter = _MirrorOwner()
